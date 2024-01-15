@@ -28,7 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
     if (!user)
       throw new UnauthorizedException(
-        'please valid token with valid credentials',
+        "please valid token with valid credentials or user doesn't exists",
       );
     return user;
   }

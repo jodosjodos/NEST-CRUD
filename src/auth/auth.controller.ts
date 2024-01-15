@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  Delete,
+  Get,
   Param,
   Patch,
   Post,
@@ -12,7 +14,6 @@ import { EditUserDto, SignInDto, SignUpDto } from './dto';
 import { JwtGuard } from './guard';
 import { GetUser } from './decorator';
 import { User } from '@prisma/client';
-
 @Controller('auth')
 export class AuthController {
   constructor(private service: AuthService) {}
@@ -33,5 +34,25 @@ export class AuthController {
     @GetUser() user: User,
   ) {
     return this.service.editUser(email, dto, user);
+  }
+
+  //  delete user
+  @UseGuards(JwtGuard)
+  @Delete('deleteUser/:email')
+  deleteUser(@Param('email') email: string, @GetUser() user: User) {
+    return this.service.deleteUser(email, user);
+  }
+
+  // get user
+  @UseGuards(JwtGuard)
+  @Get('/getSingleUser/:email')
+  getSingleUser(@Param('email') email: string, @GetUser() user: User) {
+    return this.service.getSingleUser(email, user);
+  }
+
+  // get all users
+  @Get('/getAllUsers/:hiddenValue')
+  getAllUsers(@Param('hiddenValue') hiddenValue: string) {
+    return this.service.getAllUsers(hiddenValue);
   }
 }

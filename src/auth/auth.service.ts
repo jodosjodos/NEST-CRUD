@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -73,6 +74,36 @@ export class AuthService {
     });
     return updatedUser;
   }
+
+  async deleteUser(email: string, user: User) {
+    if (email !== user.email)
+      throw new UnauthorizedException('Invalid credentials');
+    const userInDb = await this.prisma.user.findUnique({
+      where: { email: email },
+    });
+    if (!userInDb) throw new NotFoundException(" user doesn't not exists");
+    const deletedUser = await this.prisma.user.delete({
+      where: { email: email, id: user.id },
+    });
+    return deletedUser;
+  }
+
+  //  get single user
+  async getSingleUser(email: string, user: User) {
+    if (email !== user.email)
+      throw new UnauthorizedException(' please provide your email');
+    const userInDb = await this.prisma.user.findUnique({ where: { email } });
+    return userInDb;
+  }
+
+  async getAllUsers(hiddenValue: string) {
+    const hiddenValueSecret = this.config.get('HIDDEN_API');
+    if (hiddenValue !== hiddenValueSecret)
+      throw new NotFoundException(" this apis doesn't exists");
+    const users = await this.prisma.user.findMany();
+    return users;
+  }
+
   async generateToken(email: string, id: number): Promise<string> {
     const payLoad = { email, sub: id };
     const token = await this.jwtService.signAsync(payLoad, {
