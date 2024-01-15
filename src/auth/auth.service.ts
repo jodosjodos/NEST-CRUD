@@ -2,13 +2,15 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SignInDto, SignUpDto } from './dto';
+import { EditUserDto, SignInDto, SignUpDto } from './dto';
 import * as argon from 'argon2';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -52,6 +54,25 @@ export class AuthService {
     return { user, token };
   }
 
+  // edit
+  async editUser(email: string, dto: EditUserDto, user: User) {
+    const userInDb = await this.prisma.user.findUnique({
+      where: { email: email },
+    });
+
+    if (!userInDb || userInDb.email !== user.email || userInDb.id !== user.id) {
+      throw new UnauthorizedException(' Invalid credentials');
+    }
+
+    if (dto.password) {
+      dto.password = await argon.hash(dto.password);
+    }
+    const updatedUser = await this.prisma.user.update({
+      where: { email: email, id: user.id },
+      data: { ...dto },
+    });
+    return updatedUser;
+  }
   async generateToken(email: string, id: number): Promise<string> {
     const payLoad = { email, sub: id };
     const token = await this.jwtService.signAsync(payLoad, {

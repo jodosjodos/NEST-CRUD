@@ -11,7 +11,7 @@ interface payloadProps {
   exp: number;
 }
 @Injectable()
-export class JWtStrategy extends PassportStrategy(Strategy, 'jwt') {
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
     config: ConfigService,
     private prisma: PrismaService,
