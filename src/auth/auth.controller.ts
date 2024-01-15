@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -21,6 +23,7 @@ export class AuthController {
   signUp(@Body() dto: SignUpDto) {
     return this.service.signUp(dto);
   }
+  @HttpCode(HttpStatus.OK)
   @Post('/signIn')
   signIn(@Body() dto: SignInDto) {
     return this.service.signIn(dto);

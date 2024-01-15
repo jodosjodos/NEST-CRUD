@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -12,6 +13,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { User } from '@prisma/client';
+import { EmailService } from 'src/email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -19,10 +21,12 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private config: ConfigService,
+    private emailService: EmailService,
   ) {}
   async signUp(dto: SignUpDto) {
     try {
       const hashedPassword = await argon.hash(dto.password);
+      await this.emailService.sendUserWelcome(dto);
       const savedUser = await this.prisma.user.create({
         data: {
           email: dto.email,
@@ -31,8 +35,6 @@ export class AuthService {
           phoneNumber: dto.phoneNumber,
         },
       });
-      console.log(savedUser);
-
       return savedUser;
     } catch (e) {
       if (e instanceof PrismaClientKnownRequestError) {
@@ -41,7 +43,10 @@ export class AuthService {
         }
       }
 
-      return { msg: e };
+      console.log('problem while sending email');
+      throw new InternalServerErrorException(
+        ' something went wrong while sending email',
+      );
     }
   }
   async signIn(dto: SignInDto) {
@@ -75,17 +80,26 @@ export class AuthService {
     return updatedUser;
   }
 
+  // delete user
   async deleteUser(email: string, user: User) {
-    if (email !== user.email)
-      throw new UnauthorizedException('Invalid credentials');
-    const userInDb = await this.prisma.user.findUnique({
-      where: { email: email },
-    });
-    if (!userInDb) throw new NotFoundException(" user doesn't not exists");
-    const deletedUser = await this.prisma.user.delete({
-      where: { email: email, id: user.id },
-    });
-    return deletedUser;
+    try {
+      if (email !== user.email)
+        throw new UnauthorizedException('Invalid credentials');
+      const userInDb = await this.prisma.user.findUnique({
+        where: { email: email },
+      });
+      if (!userInDb) throw new NotFoundException(" user doesn't not exists");
+      await this.emailService.sendUserGoodBye(user);
+      const deletedUser = await this.prisma.user.delete({
+        where: { email: email, id: user.id },
+      });
+      return deletedUser;
+    } catch (e) {
+      console.log(' something went wrong while sending email');
+      throw new InternalServerErrorException(
+        'something went wrong when sending email',
+      );
+    }
   }
 
   //  get single user
