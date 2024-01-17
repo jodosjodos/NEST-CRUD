@@ -29,7 +29,7 @@ export class UsersController {
   findAll(@Query('role') role?: 'INTERN' | 'ENGINEER' | 'ADMIN') {
     return this.service.findAll(role);
   }
-  @Get(';id') // get/users/:id
+  @Get(':id') // get/users/:id
   findOne(@Param('id', ParseIntPipe) id: string) {
     return this.service.findOne(+id);
   }

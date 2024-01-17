@@ -149,7 +149,7 @@ export class UsersService {
 
   //   create user
   create(user: userProps) {
-    const usersByHighestId = [...this.users].sort((a, b) => (b.id = a.id));
+    const usersByHighestId = [...this.users].sort((a, b) => b.id - a.id);
     const newUser = {
       id: usersByHighestId[0].id + 1,
       ...user,
